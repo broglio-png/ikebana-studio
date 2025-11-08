@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Camera, Upload, Search, Star, Book, BarChart3, Share2, Plus, X, Filter, ChevronDown, Home, Grid3X3, Sparkles, Heart, Trash2 } from 'lucide-react';
+import { Camera, Upload, Search, Star, Book, BarChart3, Share2, Plus, X, Filter, ChevronDown, Home, Grid, Sparkles, Heart, Trash2 } from 'lucide-react';
 
 // Componente de Estrela Animada
 const AnimatedStar = ({ filled, onClick, size = '2.5rem' }) => {

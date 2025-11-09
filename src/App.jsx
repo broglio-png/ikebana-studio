@@ -701,7 +701,7 @@ const App = () => {
         <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', gap: '0.5rem', overflowX: 'auto' }}>
           {[
             { id: 'home', icon: Home, label: 'Início' },
-            { id: 'gallery', icon: Grid3X3, label: 'Galeria' },
+            { id: 'gallery', icon: Grid, label: 'Galeria' },
             { id: 'catalog', icon: Book, label: 'Catálogo' },
             { id: 'progress', icon: BarChart3, label: 'Progresso' }
           ].map(tab => (

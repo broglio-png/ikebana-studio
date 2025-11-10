@@ -255,6 +255,7 @@ const App = () => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [photoToDelete, setPhotoToDelete] = useState(null);
   const [showExportImport, setShowExportImport] = useState(false);
+  const [showLoadPhotos, setShowLoadPhotos] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filters, setFilters] = useState({
     graduation: '',
@@ -267,6 +268,7 @@ const App = () => {
   const fileInputRef = useRef(null);
   const cameraInputRef = useRef(null);
   const importInputRef = useRef(null);
+  const loadPhotosInputRef = useRef(null);
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [showInstallPrompt, setShowInstallPrompt] = useState(false);
 
@@ -356,10 +358,16 @@ const App = () => {
 
   const saveAlbums = async (newAlbums) => {
     try {
-      await window.storage.set('ikebana-albums', JSON.stringify(newAlbums));
       setAlbums(newAlbums);
+      
+      // Tentar usar window.storage (Claude.ai) ou localStorage (Vercel)
+      if (typeof window.storage !== 'undefined') {
+        await window.storage.set('ikebana-albums', JSON.stringify(newAlbums));
+      } else {
+        localStorage.setItem('ikebana-albums', JSON.stringify(newAlbums));
+      }
     } catch (error) {
-      console.error('Erro ao salvar álbuns');
+      console.error('Erro ao salvar álbuns:', error);
     }
   };
 
@@ -516,7 +524,48 @@ const App = () => {
     }
   };
 
-  // Importar dados
+  // Carregar fotos dos arquivos salvos
+  const loadPhotosFromFiles = async (e) => {
+    const files = Array.from(e.target.files);
+    const jsonFiles = files.filter(f => f.name.endsWith('.json'));
+    const imageFiles = files.filter(f => f.name.match(/\.(jpg|jpeg|png)$/i));
+    
+    console.log(`📂 Carregando ${jsonFiles.length} metadados e ${imageFiles.length} imagens`);
+    
+    const loadedPhotos = [];
+    
+    for (const jsonFile of jsonFiles) {
+      try {
+        const text = await jsonFile.text();
+        const metadata = JSON.parse(text);
+        
+        // Procurar imagem correspondente
+        const imageName = metadata.imageFileName;
+        const imageFile = imageFiles.find(f => f.name === imageName);
+        
+        if (imageFile) {
+          const reader = new FileReader();
+          const imageData = await new Promise((resolve) => {
+            reader.onload = (e) => resolve(e.target.result);
+            reader.readAsDataURL(imageFile);
+          });
+          
+          loadedPhotos.push({
+            ...metadata,
+            image: imageData
+          });
+        } else {
+          console.warn(`⚠️ Imagem não encontrada para: ${imageName}`);
+        }
+      } catch (error) {
+        console.error('Erro ao carregar arquivo:', error);
+      }
+    }
+    
+    setPhotos(prev => [...prev, ...loadedPhotos]);
+    setShowLoadPhotos(false);
+    alert(`✅ ${loadedPhotos.length} fotos carregadas com sucesso!`);
+  };
   const importData = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -716,8 +765,8 @@ const App = () => {
           <button onClick={() => setShowAddPhoto(true)} style={{ background: 'white', color: '#5e2d91', border: 'none', padding: '0.75rem 1.5rem', borderRadius: '12px', cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1rem', boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }}>
             <Plus size={20} /> Adicionar
           </button>
-          <button onClick={() => setShowExportImport(true)} style={{ background: 'rgba(255,255,255,0.2)', color: 'white', border: '2px solid white', padding: '0.75rem 1.5rem', borderRadius: '12px', cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1rem' }}>
-            <Upload size={20} /> Backup
+          <button onClick={() => setShowLoadPhotos(true)} style={{ background: 'rgba(255,255,255,0.2)', color: 'white', border: '2px solid white', padding: '0.75rem 1.5rem', borderRadius: '12px', cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1rem' }}>
+            <Upload size={20} /> Carregar
           </button>
         </div>
       </div>
@@ -1159,6 +1208,46 @@ const App = () => {
           </div>
         </div>
       )}
+      {/* Modal: Load Photos */}
+      {showLoadPhotos && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000, padding: '1rem' }} onClick={() => setShowLoadPhotos(false)}>
+          <div style={{ background: 'white', borderRadius: '20px', padding: '2rem', maxWidth: '500px', width: '100%' }} onClick={(e) => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+              <h2 style={{ margin: 0, color: '#5e2d91' }}>Carregar Fotos</h2>
+              <button onClick={() => setShowLoadPhotos(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#999' }}>
+                <X size={24} />
+              </button>
+            </div>
+
+            <div style={{ marginBottom: '1.5rem', padding: '1rem', background: '#e3f2fd', borderRadius: '10px', border: '2px solid #2196f3' }}>
+              <p style={{ margin: 0, color: '#1565c0', lineHeight: 1.6, fontSize: '0.9rem' }}>
+                <strong>📂 Como usar:</strong><br/>
+                1. Selecione TODOS os arquivos salvos anteriormente<br/>
+                2. Inclua os arquivos .jpg E .json juntos<br/>
+                3. O app vai reconhecer e carregar automaticamente!
+              </p>
+            </div>
+
+            <button onClick={() => loadPhotosInputRef.current?.click()} style={{ width: '100%', padding: '1.5rem', background: '#5e2d91', color: 'white', border: 'none', borderRadius: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem', fontWeight: 600, fontSize: '1.1rem' }}>
+              <Upload size={24} />
+              Selecionar Arquivos
+            </button>
+            <input 
+              ref={loadPhotosInputRef} 
+              type="file" 
+              multiple 
+              accept=".json,.jpg,.jpeg,.png" 
+              onChange={loadPhotosFromFiles} 
+              style={{ display: 'none' }} 
+            />
+
+            <p style={{ marginTop: '1rem', fontSize: '0.85rem', color: '#666', textAlign: 'center' }}>
+              Você pode selecionar múltiplos arquivos de uma vez!
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Modal: Export/Import */}
       {showExportImport && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000, padding: '1rem' }} onClick={() => setShowExportImport(false)}>

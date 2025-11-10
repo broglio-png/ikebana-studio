@@ -312,13 +312,34 @@ const App = () => {
 
   const loadData = async () => {
     try {
-      const photosResult = await window.storage.get('ikebana-photos');
-      const albumsResult = await window.storage.get('ikebana-albums');
+      let photosResult, albumsResult;
       
-      if (photosResult) setPhotos(JSON.parse(photosResult.value));
-      if (albumsResult) setAlbums(JSON.parse(albumsResult.value));
+      // Tentar usar window.storage (Claude.ai) ou localStorage (Vercel)
+      if (typeof window.storage !== 'undefined') {
+        console.log('📦 Usando window.storage (Claude.ai)');
+        photosResult = await window.storage.get('ikebana-photos');
+        albumsResult = await window.storage.get('ikebana-albums');
+      } else {
+        console.log('📦 Usando localStorage (navegador padrão)');
+        const photosData = localStorage.getItem('ikebana-photos');
+        const albumsData = localStorage.getItem('ikebana-albums');
+        
+        if (photosData) photosResult = { value: photosData };
+        if (albumsData) albumsResult = { value: albumsData };
+      }
+      
+      if (photosResult) {
+        const loadedPhotos = JSON.parse(photosResult.value);
+        console.log('✅ Carregadas', loadedPhotos.length, 'fotos');
+        setPhotos(loadedPhotos);
+      }
+      if (albumsResult) {
+        const loadedAlbums = JSON.parse(albumsResult.value);
+        console.log('✅ Carregados', loadedAlbums.length, 'álbuns');
+        setAlbums(loadedAlbums);
+      }
     } catch (error) {
-      console.log('Primeira vez usando o app');
+      console.log('ℹ️ Primeira vez usando o app ou erro ao carregar dados:', error);
     }
   };
 
@@ -376,8 +397,8 @@ const App = () => {
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
         
-        // Definir tamanho máximo (1200px na maior dimensão)
-        const maxSize = 1200;
+        // Definir tamanho máximo (800px na maior dimensão - reduzido para economizar espaço)
+        const maxSize = 800;
         let width = img.width;
         let height = img.height;
         
@@ -399,8 +420,13 @@ const App = () => {
         // Desenhar imagem redimensionada
         ctx.drawImage(img, 0, 0, width, height);
         
-        // Comprimir para JPEG com qualidade 0.8
-        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+        // Comprimir para JPEG com qualidade 0.7 (mais compressão)
+        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
+        
+        const originalSize = (file.size / 1024).toFixed(2);
+        const compressedSize = (compressedDataUrl.length * 0.75 / 1024).toFixed(2);
+        console.log(`📸 Imagem comprimida: ${originalSize}KB → ${compressedSize}KB`);
+        
         callback(compressedDataUrl);
       };
       img.src = e.target.result;

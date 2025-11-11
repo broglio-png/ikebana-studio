@@ -1191,14 +1191,17 @@ const App = () => {
             <div>
               <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: '#5e2d91' }}>Sua Avaliação:</label>
               <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
-                {[1, 2, 3, 4, 5].map(rating => (
+                {[1, 2, 3, 4, 5].map(starNumber => (
                   <AnimatedStar
-                    key={rating}
-                    filled={rating <= selectedPhoto.rating}
-                    onClick={() => updateRating(selectedPhoto.id, rating)}
+                    key={starNumber}
+                    filled={starNumber <= selectedPhoto.rating}
+                    onClick={() => updateRating(selectedPhoto.id, starNumber)}
                   />
                 ))}
               </div>
+              <p style={{ textAlign: 'center', marginTop: '0.5rem', color: '#666', fontSize: '0.9rem' }}>
+                {selectedPhoto.rating > 0 ? `${selectedPhoto.rating} de 5 estrelas` : 'Clique para avaliar'}
+              </p>
             </div>
 
             <button onClick={() => deletePhoto(selectedPhoto.id)} style={{ width: '100%', marginTop: '1rem', padding: '0.75rem', background: '#ff5252', color: 'white', border: 'none', borderRadius: '10px', cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>

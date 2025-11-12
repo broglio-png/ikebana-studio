@@ -314,34 +314,10 @@ const App = () => {
 
   const loadData = async () => {
     try {
-      let photosResult, albumsResult;
-      
-      // Tentar usar window.storage (Claude.ai) ou localStorage (Vercel)
-      if (typeof window.storage !== 'undefined') {
-        console.log('📦 Usando window.storage (Claude.ai)');
-        photosResult = await window.storage.get('ikebana-photos');
-        albumsResult = await window.storage.get('ikebana-albums');
-      } else {
-        console.log('📦 Usando localStorage (navegador padrão)');
-        const photosData = localStorage.getItem('ikebana-photos');
-        const albumsData = localStorage.getItem('ikebana-albums');
-        
-        if (photosData) photosResult = { value: photosData };
-        if (albumsData) albumsResult = { value: albumsData };
-      }
-      
-      if (photosResult) {
-        const loadedPhotos = JSON.parse(photosResult.value);
-        console.log('✅ Carregadas', loadedPhotos.length, 'fotos');
-        setPhotos(loadedPhotos);
-      }
-      if (albumsResult) {
-        const loadedAlbums = JSON.parse(albumsResult.value);
-        console.log('✅ Carregados', loadedAlbums.length, 'álbuns');
-        setAlbums(loadedAlbums);
-      }
+      console.log('ℹ️ App iniciado - Dados serão carregados via "Carregar" no menu');
+      // Não carrega nada automaticamente, usuário escolhe os arquivos
     } catch (error) {
-      console.log('ℹ️ Primeira vez usando o app ou erro ao carregar dados:', error);
+      console.log('ℹ️ Primeira vez usando o app');
     }
   };
 
@@ -479,10 +455,12 @@ const App = () => {
       try {
         const updatedPhotos = photos.filter(p => p.id !== photoToDelete);
         setPhotos(updatedPhotos);
-        await window.storage.set('ikebana-photos', JSON.stringify(updatedPhotos));
         setSelectedPhoto(null);
         setShowDeleteConfirm(false);
         setPhotoToDelete(null);
+        
+        console.log('✅ Foto removida da sessão (arquivo local não foi deletado)');
+        alert('✅ Foto removida da visualização!\n\nℹ️ O arquivo salvo no seu dispositivo não foi deletado.');
       } catch (error) {
         console.error('Erro ao excluir:', error);
       }
